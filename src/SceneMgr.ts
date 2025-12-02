@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { TextureEditor } from './TextureEditor';
 import { CameraMgr } from './CameraMgr';
+import { SurfaceDrawer } from './SurfaceDrawer';
 
 /**
  * ThreeJS场景管理类
@@ -14,6 +15,7 @@ export class SceneMgr {
 	private textureEditor: TextureEditor; // 使用TextureEditor单例
 	private cameraMgr!: CameraMgr; // 使用CameraMgr管理2D相机（在init()中初始化）
 	private resizeHandler: (() => void) | null = null;
+	private surfaceDrawer!: SurfaceDrawer;
 
 	get canvas(): HTMLCanvasElement {
 		return this.renderer.domElement;
@@ -69,18 +71,25 @@ export class SceneMgr {
 		this.container.appendChild(canvas);
 
 		// 获取相机管理器单例（需要在渲染器初始化和canvas添加到DOM后）
-		this.cameraMgr = CameraMgr.getInstance(this.container, this.renderer.domElement);
-
-		// 添加光源
-		// this.addLights();
+		CameraMgr.init(this.container, this.renderer.domElement);
+		this.cameraMgr = CameraMgr.getInstance();
 
 		// 添加白色平面，水平放置，法线指向+y
 		this.addWhitePlane();
+
+		// 添加网格辅助线
+		this.addGridHelper();
+
+		this.addAxesHelper();
 
 		// 设置窗口大小变化监听器（处理渲染器大小）
 		this.resizeHandler = this.handleResize.bind(this);
 		window.addEventListener('resize', this.resizeHandler);
 
+		// 初始化SurfaceDrawer
+		SurfaceDrawer.init(this.scene, this.renderer.domElement);
+		this.surfaceDrawer = SurfaceDrawer.getInstance();
+		
 		// 开始动画循环（需要在cameraMgr创建后）
 		this.animate();
 	}
@@ -112,7 +121,8 @@ export class SceneMgr {
 	 * 添加坐标轴辅助
 	 */
 	private addAxesHelper(): void {
-		const axesHelper = new THREE.AxesHelper(5);
+		const axesHelper = new THREE.AxesHelper(10);
+		axesHelper.position.set(0, 0, 0);
 		this.scene.add(axesHelper);
 	}
 
@@ -203,6 +213,11 @@ export class SceneMgr {
 		// 销毁相机管理器
 		if (this.cameraMgr) {
 			this.cameraMgr.dispose();
+		}
+		
+		// 销毁SurfaceDrawer
+		if (this.surfaceDrawer) {
+			this.surfaceDrawer.dispose();
 		}
 
 		// 清理DOM元素

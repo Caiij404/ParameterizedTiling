@@ -35,11 +35,12 @@ export class CameraMgr {
 	 * @param container 容器元素
 	 * @param canvas 渲染器的canvas元素
 	 */
-	public static getInstance(container: HTMLElement, canvas: HTMLCanvasElement): CameraMgr {
-		if (!CameraMgr.instance) {
-			CameraMgr.instance = new CameraMgr(container, canvas);
-		}
-		return CameraMgr.instance;
+	public static getInstance(): CameraMgr {
+		return CameraMgr.instance!;
+	}
+
+	public static init(container: HTMLElement, canvas: HTMLCanvasElement) {
+		CameraMgr.instance = new CameraMgr(container, canvas);
 	}
 
 	/**
@@ -98,7 +99,7 @@ export class CameraMgr {
 		this.controls3D.enableZoom = true; // 启用滚轮缩放
 		
 		// 设置3D相机初始位置
-		this.camera3D.position.set(0, 10, 10);
+		this.camera3D.position.set(0, 5, 5);
 		this.camera3D.lookAt(0, 0, 0);
 		
 		// 初始状态下禁用3D相机控制器（默认使用2D相机）
