@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import { TextureEditor } from './TextureEditor';
 import { CameraMgr } from './CameraMgr';
+import { GeometryEditor } from './GeometryEditor';
 import { SurfaceDrawer } from './SurfaceDrawer';
-
 /**
  * ThreeJS场景管理类
  * 负责初始化3D场景、渲染器，以及处理用户交互
@@ -16,7 +16,8 @@ export class SceneMgr {
 	private cameraMgr!: CameraMgr; // 使用CameraMgr管理2D相机（在init()中初始化）
 	private resizeHandler: (() => void) | null = null;
 	private surfaceDrawer!: SurfaceDrawer;
-
+	private gridHelper: THREE.GridHelper | null = null;
+	private axesHelper: THREE.AxesHelper | null = null;
 	get canvas(): HTMLCanvasElement {
 		return this.renderer.domElement;
 	}
@@ -37,6 +38,13 @@ export class SceneMgr {
 
 		// 创建渲染器
 		this.renderer = new THREE.WebGLRenderer({ antialias: true });
+
+		this.gridHelper = new THREE.GridHelper(10, 10, 0x888888, 0x444444);
+		this.gridHelper.position.y = -0.01;
+		this.axesHelper = new THREE.AxesHelper(10);
+		this.axesHelper.position.y = 0.0001;
+		this.scene.add(this.gridHelper);
+		this.scene.add(this.axesHelper);
 
 		// 初始化场景（需要在创建渲染器后）
 		this.init();
@@ -74,13 +82,22 @@ export class SceneMgr {
 		CameraMgr.init(this.container, this.renderer.domElement);
 		this.cameraMgr = CameraMgr.getInstance();
 
+		const vertices = [
+			new THREE.Vector3(1.5, 0, 0),
+			new THREE.Vector3(4.6, 0, 0),
+			new THREE.Vector3(5.0, 2, 0),
+			new THREE.Vector3(0, 2, 0),
+			new THREE.Vector3(0, 1.6, 0)
+		];
+		let geoEditor = GeometryEditor.getInstance();
+		let results = geoEditor.CutGeometry(vertices, 1, 1);
+		console.log(results);
+		
+		// 绘制裁剪后的多边形
+		this.drawPolygons(results);
+		
 		// 添加白色平面，水平放置，法线指向+y
-		this.addWhitePlane();
-
-		// 添加网格辅助线
-		this.addGridHelper();
-
-		this.addAxesHelper();
+		// this.addWhitePlane();
 
 		// 设置窗口大小变化监听器（处理渲染器大小）
 		this.resizeHandler = this.handleResize.bind(this);
@@ -94,53 +111,60 @@ export class SceneMgr {
 		this.animate();
 	}
 
-
 	/**
-	 * 添加光源
+	 * 绘制多个多边形
+	 * @param polygons 多边形顶点数组的数组
 	 */
-	private addLights(): void {
-		// 环境光
-		const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-		this.scene.add(ambientLight);
+	private drawPolygons(polygons: THREE.Vector3[][]): void {
+		// 预定义的颜色数组，用于区分不同多边形
+		const colors = [
+			0xff6b6b, // 红
+			0x4ecdc4, // 青
+			0x45b7d1, // 蓝
+			0xf7dc6f, // 黄
+			0xbb8fce, // 紫
+			0x58d68d, // 绿
+			0xf0b27a, // 橙
+			0x85c1e9, // 浅蓝
+			0xf1948a, // 粉
+			0x82e0aa, // 浅绿
+		];
 
-		// 平行光
-		const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-		directionalLight.position.set(5, 10, 7.5);
-		this.scene.add(directionalLight);
-	}
+		polygons.forEach((polygon, index) => {
+			if (polygon.length < 3) return; // 至少需要3个顶点
 
-	/**
-	 * 添加网格辅助线
-	 */
-	private addGridHelper(): void {
-		const gridHelper = new THREE.GridHelper(10, 10, 0x888888, 0x444444);
-		this.scene.add(gridHelper);
-	}
+			// 创建 Shape（2D形状，使用 x, y 坐标）
+			const shape = new THREE.Shape();
+			shape.moveTo(polygon[0].x, polygon[0].y);
+			for (let i = 1; i < polygon.length; i++) {
+				shape.lineTo(polygon[i].x, polygon[i].y);
+			}
+			shape.closePath();
 
-	/**
-	 * 添加坐标轴辅助
-	 */
-	private addAxesHelper(): void {
-		const axesHelper = new THREE.AxesHelper(10);
-		axesHelper.position.set(0, 0, 0);
-		this.scene.add(axesHelper);
-	}
+			// 从 Shape 创建几何体
+			const geometry = new THREE.ShapeGeometry(shape);
 
-	/**
-	 * 在原点添加立方体
-	 */
-	private addCube(): void {
-		const geometry = new THREE.BoxGeometry(1, 1, 1);
-		const material = new THREE.MeshStandardMaterial({
-			color: 0x00ff00,
-			wireframe: false,
-			metalness: 0.5,
-			roughness: 0.5
+			// 为每个多边形分配不同颜色
+			const color = colors[index % colors.length];
+			const material = new THREE.MeshBasicMaterial({
+				color: color,
+				side: THREE.DoubleSide,
+				transparent: true,
+				opacity: 0.8
+			});
+
+			const mesh = new THREE.Mesh(geometry, material);
+			// ShapeGeometry 默认在 XY 平面，这正是我们需要的
+			mesh.position.z = 0.001; // 稍微抬高，避免与网格重叠
+			this.scene.add(mesh);
+
+			// 添加边框线，使多边形边界更清晰
+			const edgesGeometry = new THREE.EdgesGeometry(geometry);
+			const lineMaterial = new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 });
+			const edges = new THREE.LineSegments(edgesGeometry, lineMaterial);
+			edges.position.z = 0.002;
+			this.scene.add(edges);
 		});
-		const cube = new THREE.Mesh(geometry, material);
-		// 放在原点
-		cube.position.set(0, 0, 0);
-		this.scene.add(cube);
 	}
 
 	/**
