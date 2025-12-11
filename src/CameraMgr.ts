@@ -70,9 +70,10 @@ export class CameraMgr {
 		// 创建2D相机的轨道控制器
 		this.controls2D = new OrbitControls(this.camera2D, this.canvas);
 
-		// 设置2D相机初始位置，固定朝着-y方向观察（向下看）
-		// 相机在y轴正方向，看向xoz平面（y=0），即看向负y方向
-		this.camera2D.position.set(0, 200, 0);
+		// 设置2D相机初始位置，固定朝着-z方向观察（向下看）
+		// 相机在z轴正方向，看向xy平面（z=0），即看向负z方向
+		this.camera2D.up.set(0, 1, 0); // 屏幕Y轴向上对应世界Y轴
+		this.camera2D.position.set(0, 0, 500);
 		this.camera2D.lookAt(0, 0, 0);
 
 		// 配置2D相机轨道控制器
@@ -90,6 +91,12 @@ export class CameraMgr {
 			1000 // 远裁剪面
 		);
 
+		// 设置3D相机初始位置（Z轴向上的坐标系）
+		// 必须在创建OrbitControls之前设置up向量，否则控制器会使用默认的(0,1,0)
+		this.camera3D.up.set(0, 0, 1); // Z轴向上
+		this.camera3D.position.set(0, -5, 5);
+		this.camera3D.lookAt(0, 0, 0);
+
 		// 创建3D相机的轨道控制器（不做任何限制）
 		this.controls3D = new OrbitControls(this.camera3D, this.canvas);
 		
@@ -97,10 +104,6 @@ export class CameraMgr {
 		this.controls3D.enableDamping = true;
 		this.controls3D.dampingFactor = 0.05;
 		this.controls3D.enableZoom = true; // 启用滚轮缩放
-		
-		// 设置3D相机初始位置
-		this.camera3D.position.set(0, 5, 5);
-		this.camera3D.lookAt(0, 0, 0);
 		
 		// 初始状态下禁用3D相机控制器（默认使用2D相机）
 		this.controls3D.enabled = false;
@@ -209,10 +212,10 @@ export class CameraMgr {
 
 	/**
 	 * 配置2D相机轨道控制器
-	 * 1. 相机看向负y方向
-	 * 2. 鼠标右键拖动：只在xoz平面移动，不改变y值
+	 * 1. 相机看向负z方向（Z轴向上的坐标系）
+	 * 2. 鼠标右键拖动：只在xy平面移动，不改变z值
 	 * 3. 鼠标左键：不改变相机任何值
-	 * 4. 鼠标滚轮：改变y值
+	 * 4. 鼠标滚轮：改变z值（高度）
 	 * 5. 相机移动要有阻尼感
 	 */
 	private setupControls2D(): void {
@@ -239,40 +242,40 @@ export class CameraMgr {
 		// 启用屏幕空间平移
 		this.controls2D.screenSpacePanning = true;
 
-		// 使用对象存储fixedY，以便在所有闭包中共享
+		// 使用对象存储fixedZ，以便在所有闭包中共享（Z轴向上的坐标系）
 		const state = {
-			fixedY: this.camera2D.position.y
+			fixedZ: this.camera2D.position.z
 		};
 
 		// 根据初始高度设置初始 zoom，避免第一次滚轮时的跳跃
-		const initialHeight = state.fixedY;
+		const initialHeight = state.fixedZ;
 		// 使用参考高度计算 zoom：高度越高，zoom 越小
 		// zoom = MAX_ZOOM / (1 + (height - MIN_HEIGHT) / REFERENCE_HEIGHT)
 		const heightRatio = (initialHeight - CameraMgr.MIN_HEIGHT) / CameraMgr.REFERENCE_HEIGHT;
 		this.camera2D.zoom = CameraMgr.MAX_ZOOM / (1 + heightRatio);
 		this.camera2D.updateProjectionMatrix();
 
-		// 重写平移方法，只允许x/z方向移动，保持y值不变
+		// 重写平移方法，只允许x/y方向移动，保持z值不变（Z轴向上的坐标系）
 		const controlsAny = this.controls2D as any;
 		const originalPan = controlsAny.pan?.bind(this.controls2D);
 		if (originalPan) {
 			controlsAny.pan = function (deltaX: number, deltaY: number) {
 				const camera = this.object as THREE.OrthographicCamera;
-				const prevY = camera.position.y;
+				const prevZ = camera.position.z;
 
 				// 执行原始平移
 				originalPan.call(this, deltaX, deltaY);
 
-				// 恢复y值，只允许x/z方向移动
-				camera.position.y = prevY;
-				state.fixedY = prevY;
+				// 恢复z值，只允许x/y方向移动
+				camera.position.z = prevZ;
+				state.fixedZ = prevZ;
 			};
 		}
 
 		// 保存state到controls对象，以便在事件处理中访问
 		controlsAny._state = state;
 
-		// 重写update方法，确保相机始终看向负y方向（向下看）
+		// 重写update方法，确保相机始终看向负z方向（向下看）
 		const originalUpdate = this.controls2D.update.bind(this.controls2D);
 		this.controls2D.update = function () {
 			const camera = this.object as THREE.OrthographicCamera;
@@ -280,18 +283,18 @@ export class CameraMgr {
 			// 执行原始update（处理阻尼等）
 			const result = originalUpdate();
 
-			// 保存当前x和z值（平移可能改变了它们）
+			// 保存当前x和y值（平移可能改变了它们）
 			const currentX = camera.position.x;
-			const currentZ = camera.position.z;
+			const currentY = camera.position.y;
 
-			// 强制设置y值为固定值
-			camera.position.y = state.fixedY;
+			// 强制设置z值为固定值
+			camera.position.z = state.fixedZ;
 
-			// 确保相机始终看向负y方向（向下看，看向xoz平面）
-			camera.lookAt(currentX, 0, currentZ);
+			// 确保相机始终看向负z方向（向下看，看向xy平面）
+			camera.lookAt(currentX, currentY, 0);
 
 			// 确保位置值没有被lookAt改变
-			camera.position.set(currentX, state.fixedY, currentZ);
+			camera.position.set(currentX, currentY, state.fixedZ);
 
 			return result ?? false;
 		};
@@ -322,34 +325,35 @@ export class CameraMgr {
 			const sensitivity = 8.0; // 增大灵敏度，使滚轮响应更快
 
 			// 根据滚轮方向调整高度（deltaY > 0 向下滚动，相机应该升高；deltaY < 0 向上滚动，相机应该降低）
-			const oldY = state.fixedY;
-			state.fixedY += event.deltaY * 0.01 * sensitivity;
+			// Z轴向上的坐标系：改变z值
+			const oldZ = state.fixedZ;
+			state.fixedZ += event.deltaY * 0.01 * sensitivity;
 
 			// 只限制最小高度，不限制最大高度
-			state.fixedY = Math.max(CameraMgr.MIN_HEIGHT, state.fixedY);
+			state.fixedZ = Math.max(CameraMgr.MIN_HEIGHT, state.fixedZ);
 
-			// 如果y值改变了，更新相机
-			if (Math.abs(state.fixedY - oldY) > 0.001) {
+			// 如果z值改变了，更新相机
+			if (Math.abs(state.fixedZ - oldZ) > 0.001) {
 				// 直接更新相机位置
-				cameraMgr.camera2D.position.y = state.fixedY;
+				cameraMgr.camera2D.position.z = state.fixedZ;
 
-				// 更新相机朝向（看向xoz平面）
+				// 更新相机朝向（看向xy平面）
 				const currentX = cameraMgr.camera2D.position.x;
-				const currentZ = cameraMgr.camera2D.position.z;
-				cameraMgr.camera2D.lookAt(currentX, 0, currentZ);
+				const currentY = cameraMgr.camera2D.position.y;
+				cameraMgr.camera2D.lookAt(currentX, currentY, 0);
 
-				// 确保y值没有被lookAt改变
-				cameraMgr.camera2D.position.y = state.fixedY;
+				// 确保z值没有被lookAt改变
+				cameraMgr.camera2D.position.z = state.fixedZ;
 
 				// 对于正交相机，根据高度调整 zoom（高度越高，zoom 越小，视野越大）
 				// 使用参考高度计算 zoom：zoom = MAX_ZOOM / (1 + (height - MIN_HEIGHT) / REFERENCE_HEIGHT)
-				const heightRatio = (state.fixedY - CameraMgr.MIN_HEIGHT) / CameraMgr.REFERENCE_HEIGHT;
+				const heightRatio = (state.fixedZ - CameraMgr.MIN_HEIGHT) / CameraMgr.REFERENCE_HEIGHT;
 				cameraMgr.camera2D.zoom = CameraMgr.MAX_ZOOM / (1 + heightRatio);
 				// 确保 zoom 不会小于 MIN_ZOOM
 				cameraMgr.camera2D.zoom = Math.max(CameraMgr.MIN_ZOOM, cameraMgr.camera2D.zoom);
 				cameraMgr.camera2D.updateProjectionMatrix();
 
-				console.log('Wheel: fixedY changed from', oldY, 'to', state.fixedY, 'camera2D.y:', cameraMgr.camera2D.position.y, 'zoom:', cameraMgr.camera2D.zoom);
+				console.log('Wheel: fixedZ changed from', oldZ, 'to', state.fixedZ, 'camera2D.z:', cameraMgr.camera2D.position.z, 'zoom:', cameraMgr.camera2D.zoom);
 			}
 		};
 

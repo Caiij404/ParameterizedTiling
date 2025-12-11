@@ -39,10 +39,12 @@ export class SceneMgr {
 		// 创建渲染器
 		this.renderer = new THREE.WebGLRenderer({ antialias: true });
 
+		// GridHelper默认在XZ平面，需要旋转到XY平面（Z轴向上的坐标系）
 		this.gridHelper = new THREE.GridHelper(10, 10, 0x888888, 0x444444);
-		this.gridHelper.position.y = -0.01;
+		this.gridHelper.rotation.x = Math.PI / 2; // 旋转90度使其在XY平面
+		this.gridHelper.position.z = -0.01; // 稍微下移避免z-fighting
 		this.axesHelper = new THREE.AxesHelper(10);
-		this.axesHelper.position.y = 0.0001;
+		this.axesHelper.position.z = 0.0001;
 		this.scene.add(this.gridHelper);
 		this.scene.add(this.axesHelper);
 
@@ -168,7 +170,7 @@ export class SceneMgr {
 	}
 
 	/**
-	 * 添加白色平面
+	 * 添加白色平面（平躺在XY平面，法线指向+Z）
 	 */
 	private addWhitePlane(): void {
 		const geometry = new THREE.PlaneGeometry(5, 5);
@@ -186,10 +188,9 @@ export class SceneMgr {
 		});
 		const plane = new THREE.Mesh(geometry, material);
 
-		// 水平放置，法线指向+y轴
-		// 绕x轴旋转90度，使平面与xy平面平行，法线指向+y
-		plane.rotation.x = Math.PI / 2;
-		plane.position.y = 0; // 放在y=0的位置
+		// PlaneGeometry默认在XY平面，法线指向+Z，正是我们需要的（Z轴向上的坐标系）
+		// 不需要旋转
+		plane.position.z = 0; // 放在z=0的位置
 
 		this.scene.add(plane);
 	}
