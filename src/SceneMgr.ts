@@ -40,7 +40,7 @@ export class SceneMgr {
 		this.renderer = new THREE.WebGLRenderer({ antialias: true });
 
 		// GridHelper默认在XZ平面，需要旋转到XY平面（Z轴向上的坐标系）
-		this.gridHelper = new THREE.GridHelper(10, 10, 0x888888, 0x444444);
+		this.gridHelper = new THREE.GridHelper(20, 20, 0x888888, 0x444444);
 		this.gridHelper.rotation.x = Math.PI / 2; // 旋转90度使其在XY平面
 		this.gridHelper.position.z = -0.01; // 稍微下移避免z-fighting
 		this.axesHelper = new THREE.AxesHelper(10);
@@ -97,9 +97,6 @@ export class SceneMgr {
 		
 		// 绘制裁剪后的多边形
 		this.drawPolygons(results);
-		
-		// 添加白色平面，水平放置，法线指向+y
-		// this.addWhitePlane();
 
 		// 设置窗口大小变化监听器（处理渲染器大小）
 		this.resizeHandler = this.handleResize.bind(this);

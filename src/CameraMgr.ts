@@ -16,7 +16,7 @@ export class CameraMgr {
 	
 	// 高度和 zoom 的配置常量
 	private static readonly MIN_HEIGHT = 2;
-	private static readonly MIN_ZOOM = 1;
+	private static readonly MIN_ZOOM = 0.01;
 	private static readonly MAX_ZOOM = 10;
 	private static readonly REFERENCE_HEIGHT = 100; // 用于计算 zoom 的参考高度（不限制实际高度）
 	
@@ -29,6 +29,7 @@ export class CameraMgr {
 	private resizeHandler: () => void;
 	private keyboardHandler: ((e: KeyboardEvent) => void) | null = null;
 	private currentCameraType: '2D' | '3D' = '2D'; // 当前激活的相机类型
+	private sensitivity: number = 16.0; // 滚轮灵敏度
 
 	/**
 	 * 获取单例实例
@@ -64,7 +65,7 @@ export class CameraMgr {
 			size,           // top
 			-size,          // bottom
 			0.1,            // near
-			1000            // far
+			10000            // far
 		);
 
 		// 创建2D相机的轨道控制器
@@ -73,7 +74,7 @@ export class CameraMgr {
 		// 设置2D相机初始位置，固定朝着-z方向观察（向下看）
 		// 相机在z轴正方向，看向xy平面（z=0），即看向负z方向
 		this.camera2D.up.set(0, 1, 0); // 屏幕Y轴向上对应世界Y轴
-		this.camera2D.position.set(0, 0, 500);
+		this.camera2D.position.set(0, 0, 1000);
 		this.camera2D.lookAt(0, 0, 0);
 
 		// 配置2D相机轨道控制器
@@ -322,12 +323,12 @@ export class CameraMgr {
 			event.preventDefault();
 			event.stopImmediatePropagation();
 
-			const sensitivity = 8.0; // 增大灵敏度，使滚轮响应更快
+			
 
 			// 根据滚轮方向调整高度（deltaY > 0 向下滚动，相机应该升高；deltaY < 0 向上滚动，相机应该降低）
 			// Z轴向上的坐标系：改变z值
 			const oldZ = state.fixedZ;
-			state.fixedZ += event.deltaY * 0.01 * sensitivity;
+			state.fixedZ += event.deltaY * 0.01 * this.sensitivity;
 
 			// 只限制最小高度，不限制最大高度
 			state.fixedZ = Math.max(CameraMgr.MIN_HEIGHT, state.fixedZ);
@@ -402,12 +403,12 @@ export class CameraMgr {
 	private setupKeyboardListeners(): void {
 		this.keyboardHandler = (e: KeyboardEvent) => {
 			// Alt + 2 切换到2D相机
-			if (e.altKey && e.key === '2') {
+			if (e.key === '2') {
 				e.preventDefault();
 				this.switchTo2D();
 			}
 			// Alt + 3 切换到3D相机
-			else if (e.altKey && e.key === '3') {
+			else if (e.key === '3') {
 				e.preventDefault();
 				this.switchTo3D();
 			}
