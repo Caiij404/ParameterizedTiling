@@ -11,6 +11,9 @@ onMounted(() => {
   // 初始化3D场景
   sceneMgr = new SceneMgr('scene-container');
   
+  // 将sceneMgr暴露到全局作用域，方便在DevTools中使用
+  (window as any).sceneMgr = sceneMgr;
+  
   // 禁止右键菜单
   document.addEventListener('contextmenu', (e) => {
     e.preventDefault();
@@ -22,6 +25,8 @@ onUnmounted(() => {
   if (sceneMgr) {
     sceneMgr.dispose();
     sceneMgr = null;
+    // 从全局作用域移除sceneMgr
+    delete (window as any).sceneMgr;
   }
 });
 </script>
