@@ -3,6 +3,7 @@ import { TextureEditor } from './TextureEditor';
 import { CameraMgr } from './CameraMgr';
 import { GeometryEditor } from './GeometryEditor';
 import { SurfaceDrawer } from './SurfaceDrawer';
+import { ClipInfo } from './types';
 /**
  * ThreeJS场景管理类
  * 负责初始化3D场景、渲染器，以及处理用户交互
@@ -62,26 +63,42 @@ export class SceneMgr {
 			new THREE.Vector3(0, 1.6, 0)
 		];
 		let geoEditor = GeometryEditor.getInstance();
-		let results = geoEditor.CutGeometry(vertices, 1, 1);
-		console.log(results);
-		
-		// 绘制裁剪后的多边形
-		let meshes = geoEditor.drawPolygons(results);
-		this.scene.add(...meshes);
+		let meshes1 = geoEditor.drawPolygons([vertices])
+		this.scene.add(...meshes1);
+
+		const v2 = [
+			new THREE.Vector3(0, 0.2, 0),
+			new THREE.Vector3(0.2, 0, 0),
+			new THREE.Vector3(0.8, 0, 0),
+			new THREE.Vector3(1, 0.2, 0),
+			new THREE.Vector3(1, 0.8, 0),
+			new THREE.Vector3(0.8, 1, 0),
+			new THREE.Vector3(0.2, 1, 0),
+			new THREE.Vector3(0, 0.8, 0)
+		]
+		let meshes2 = geoEditor.drawPolygons([v2], new THREE.Vector3(0,-5,0));
+		this.scene.add(...meshes2);
+
+		let clipInfo = new ClipInfo(v2);
+		let res = geoEditor.CutPolygonWithPolygon(vertices, clipInfo);
+		console.log(res);
+		let offset = new THREE.Vector3(-5, -5, 0);
+		let meshes3 = geoEditor.drawPolygons(res, offset);
+		this.scene.add(...meshes3);
 
 		// 设置窗口大小变化监听器（处理渲染器大小）
 		this.resizeHandler = this.handleResize.bind(this);
 		window.addEventListener('resize', this.resizeHandler);
 
-		// 创建并绘制六边形
-		const hexagon = geoEditor.createHexagon(new THREE.Vector2(0.5,0.5), 0.5, 8);
-		let hexagonMeshes = geoEditor.drawPolygons([hexagon]);
-		this.scene.add(...hexagonMeshes);
+		// // 创建并绘制六边形
+		// const hexagon = geoEditor.createHexagon(new THREE.Vector2(0.5,0.5), 0.5, 8);
+		// let hexagonMeshes = geoEditor.drawPolygons([hexagon]);
+		// this.scene.add(...hexagonMeshes);
 
 		// 测试drawLinesFromPoint方法：从六边形中心到每个顶点绘制直线
-		const center = new THREE.Vector3(0.5, 0.5, 0);
-		const lines = geoEditor.drawLinesFromPoint(center, hexagon, 0x0000ff); // 蓝色直线
-		this.scene.add(lines);
+		// const center = new THREE.Vector3(0.5, 0.5, 0);
+		// const lines = geoEditor.drawLinesFromPoint(center, hexagon, 0x0000ff); // 蓝色直线
+		// this.scene.add(lines);
 
 	}
 

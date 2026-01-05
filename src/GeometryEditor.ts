@@ -121,15 +121,20 @@ export class GeometryEditor {
                 });
                 for (let k = 0; k < clipVertices.length; ++k)
                 {
-                    let edge_start = clipVertices[k];
-                    let edge_end = clipVertices[(k + 1) % clipVertices.length];
-                    // output = this.clipPolygonWithEdge(output, (p1) => {
-                    //     let a = edge_end.sub(edge_start);
-                    //     let b = p1.sub(edge_start);
-                    //     return a.dot(b) >= 0;
-                    // }, (p1, p2)=>{
-
-                    // })
+                    let a = clipVertices[k];
+                    let b = clipVertices[(k + 1) % clipVertices.length];
+                    output = this.clipPolygonWithEdge(output, (p) => {
+                        let ab = b.clone().sub(a);
+                        let ap = p.clone().sub(a);
+                        return ab.cross(ap).z >= 0;
+                    }, (s, p)=>{
+                        const sp = p.clone().sub(s);
+                        const ab = b.clone().sub(a);
+                        const t = 
+                            a.clone().sub(s).cross(ab).z / 
+                            sp.clone().cross(ab).z;
+                        return s.clone().add(sp.multiplyScalar(t));
+                    })
                 }
                 results.push(output);
             }
@@ -250,7 +255,7 @@ export class GeometryEditor {
      * 绘制多个多边形
      * @param polygons 多边形顶点数组的数组
      */
-    public drawPolygons(polygons: THREE.Vector3[][]): any[] {
+    public drawPolygons(polygons: THREE.Vector3[][], offset = new THREE.Vector3(0,0,0)): any[] {
         // 预定义的颜色数组，用于区分不同多边形
         const colors = [
             0xff6b6b, // 红
@@ -291,6 +296,9 @@ export class GeometryEditor {
             const mesh = new THREE.Mesh(geometry, material);
             // ShapeGeometry 默认在 XY 平面，这正是我们需要的
             mesh.position.z = 0.001; // 稍微抬高，避免与网格重叠
+            let pos = mesh.position.add(offset);
+            mesh.position.x = pos.x;
+            mesh.position.y = pos.y;
             results.push(mesh);
 
             // 添加边框线，使多边形边界更清晰
@@ -298,6 +306,9 @@ export class GeometryEditor {
             const lineMaterial = new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 });
             const edges = new THREE.LineSegments(edgesGeometry, lineMaterial);
             edges.position.z = 0.002;
+            edges.position.x = pos.x;
+            edges.position.y = pos.y;
+            // edges.position.z = pos.z;
             results.push(edges);
         });
         return results;
