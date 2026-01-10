@@ -82,24 +82,28 @@ export class SceneMgr {
 		let clipInfo = new ClipInfo(v2);
 		let res = geoEditor.CutPolygonWithPolygon(vertices, clipInfo);
 		console.log(res);
-		let offset = new THREE.Vector3(-5, -5, 0);
-		let meshes3 = geoEditor.drawPolygons(res, offset);
+		let meshes3 = geoEditor.drawPolygons(res, new THREE.Vector3(-5, -5, 0));
 		this.scene.add(...meshes3);
+
+		// const v3 = [
+		// 	new THREE.Vector3(-0.2, 0, 0),
+		// 	new THREE.Vector3(0, -0.2, 0),
+		// 	new THREE.Vector3(0.2, 0, 0),
+		// 	new THREE.Vector3(0, 0.2, 0),
+		// ]
+		// this.scene.add(...geoEditor.drawPolygons([v3], new THREE.Vector3(0, 0, 0)));
+		// this.scene.add(...geoEditor.drawPolygons([v3], new THREE.Vector3(1, 0, 0)));
+		// this.scene.add(...geoEditor.drawPolygons([v3], new THREE.Vector3(2, 0, 0)));
+
+		// let clipInfo2 = new ClipInfo(v3, 1, 1, false);
+		// let res2 = geoEditor.CutPolygonWithPolygon(vertices, clipInfo2);
+		// console.log(res2);
+		// let meshes4 = geoEditor.drawPolygons(res2, new THREE.Vector3(-5, 0, 0));
+		// this.scene.add(...meshes4);
 
 		// 设置窗口大小变化监听器（处理渲染器大小）
 		this.resizeHandler = this.handleResize.bind(this);
 		window.addEventListener('resize', this.resizeHandler);
-
-		// // 创建并绘制六边形
-		// const hexagon = geoEditor.createHexagon(new THREE.Vector2(0.5,0.5), 0.5, 8);
-		// let hexagonMeshes = geoEditor.drawPolygons([hexagon]);
-		// this.scene.add(...hexagonMeshes);
-
-		// 测试drawLinesFromPoint方法：从六边形中心到每个顶点绘制直线
-		// const center = new THREE.Vector3(0.5, 0.5, 0);
-		// const lines = geoEditor.drawLinesFromPoint(center, hexagon, 0x0000ff); // 蓝色直线
-		// this.scene.add(lines);
-
 	}
 
 	/**

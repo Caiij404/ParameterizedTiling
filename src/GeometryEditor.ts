@@ -85,34 +85,6 @@ export class GeometryEditor {
         let gridCountX = Math.ceil((bBox.max.x - bBox.min.x) / step_x);
         let gridCountY = Math.ceil((bBox.max.y - bBox.min.y) / step_y);
 
-        const clipPolygonWithEdge = (input: THREE.Vector3[], 
-            isInside: (point: THREE.Vector3) => boolean, 
-            getIntersection:(p1: THREE.Vector3, p2: THREE.Vector3) => THREE.Vector3): THREE.Vector3[] => {
-            let output:THREE.Vector3[] = [];
-            for(let i = 0; i < input.length; i++) {
-                let current = input[i];
-                let next = input[(i + 1) % input.length];
-                let inside1 = isInside(current);
-                let inside2 = isInside(next);
-                if(inside1)
-                {
-                    output.push(current)
-                    if(!inside2)
-                    {
-                        output.push(getIntersection(current,next));
-                    }
-                }
-                else
-                {
-                    if(inside2)
-                    {
-                        output.push(getIntersection(current,next));
-                    }
-                }
-            }
-            return output;
-        }
-
         for(let i=0; i<gridCountX; i++) {
             for(let j=0; j<gridCountY; j++) {
                 let output: THREE.Vector3[] = [...polygon];
