@@ -25,24 +25,19 @@ export class TextureEditor {
     
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
-    
     // 设置只使用图片的左半部分作为纹理
     texture.offset.set(0, 0);   // 从左上角开始
     
-    // 设置只使用左半部分（水平方向50%），同时重复3次
-    // 水平方向：0.5表示只使用左半部分，乘以3表示重复3次左半部分内容
-    // 垂直方向：1表示使用全部，乘以3表示重复3次
-    texture.repeat.set(1 * 3, 1 * 3);
+    texture.repeat.set(1, 1);
     
-    texture.flipY = false;
+    texture.flipY = true;
     
     texture.colorSpace = THREE.SRGBColorSpace;
     texture.generateMipmaps = false;
     texture.minFilter = THREE.LinearFilter;
     texture.magFilter = THREE.LinearFilter;
     
-    texture.center.set(1, 1);
-    texture.rotation = Math.PI / 12;
+    texture.center.set(0, 0);
     
     return texture;
   }

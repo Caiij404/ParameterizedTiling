@@ -166,10 +166,6 @@ export class SceneMgr {
 		});
 		const plane = new THREE.Mesh(geometry, material);
 
-		// PlaneGeometry默认在XY平面，法线指向+Z，正是我们需要的（Z轴向上的坐标系）
-		// 不需要旋转
-		plane.position.z = 0; // 放在z=0的位置
-
 		this.scene.add(plane);
 	}
 
