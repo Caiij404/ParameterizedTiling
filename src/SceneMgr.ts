@@ -4,6 +4,7 @@ import { CameraMgr } from './CameraMgr';
 import { GeometryEditor } from './GeometryEditor';
 import { SurfaceDrawer } from './SurfaceDrawer';
 import { ClipInfo } from './types';
+import { triangulate } from './TopoUtil';
 /**
  * ThreeJS场景管理类
  * 负责初始化3D场景、渲染器，以及处理用户交互
@@ -48,7 +49,7 @@ export class SceneMgr {
 		this.axesHelper.position.z = 0.0001;
 		this.scene.add(this.gridHelper);
 		this.scene.add(this.axesHelper);
-		this.addSomethingToScene();
+		this.createPlane();
 		// 初始化场景（需要在创建渲染器后）
 		this.init();
 	}
@@ -85,26 +86,38 @@ export class SceneMgr {
 		let meshes3 = geoEditor.drawPolygons(res, new THREE.Vector3(-5, -5, 0));
 		this.scene.add(...meshes3);
 
-		// const v3 = [
-		// 	new THREE.Vector3(-0.2, 0, 0),
-		// 	new THREE.Vector3(0, -0.2, 0),
-		// 	new THREE.Vector3(0.2, 0, 0),
-		// 	new THREE.Vector3(0, 0.2, 0),
-		// ]
-		// this.scene.add(...geoEditor.drawPolygons([v3], new THREE.Vector3(0, 0, 0)));
-		// this.scene.add(...geoEditor.drawPolygons([v3], new THREE.Vector3(1, 0, 0)));
-		// this.scene.add(...geoEditor.drawPolygons([v3], new THREE.Vector3(2, 0, 0)));
-
-		// let clipInfo2 = new ClipInfo(v3, 1, 1, false);
-		// let res2 = geoEditor.CutPolygonWithPolygon(vertices, clipInfo2);
-		// console.log(res2);
-		// let meshes4 = geoEditor.drawPolygons(res2, new THREE.Vector3(-5, 0, 0));
-		// this.scene.add(...meshes4);
-
 		// 设置窗口大小变化监听器（处理渲染器大小）
 		this.resizeHandler = this.handleResize.bind(this);
 		window.addEventListener('resize', this.resizeHandler);
 	}
+
+	private createPlane():void{
+		const v2 = [
+			new THREE.Vector3(0, 0.2, 0),
+			new THREE.Vector3(0.2, 0, 0),
+			new THREE.Vector3(0.8, 0, 0),
+			new THREE.Vector3(1, 0.2, 0),
+			new THREE.Vector3(1, 0.8, 0),
+			new THREE.Vector3(0.8, 1, 0),
+			new THREE.Vector3(0.2, 1, 0),
+			new THREE.Vector3(0, 0.8, 0)
+		];
+
+		let result = triangulate(v2);
+		console.log(result);
+
+		// 绘制顶点数组的匿名函数
+		const drawVertices = () => {
+			let geoEditor = GeometryEditor.getInstance();
+			let meshes = geoEditor.drawPolygons([v2], new THREE.Vector3(0, 0, 0));
+			this.scene.add(...meshes);
+		};
+
+		// 调用匿名函数绘制顶点数组
+		// drawVertices();
+
+	}
+
 
 	/**
 	 * 初始化场景

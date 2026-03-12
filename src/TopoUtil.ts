@@ -2,8 +2,8 @@ import * as THREE from 'three'
 
 function cross(a: THREE.Vector3, b: THREE.Vector3, c: THREE.Vector3): number
 {
-    let ab = b.sub(a);
-    let ac = c.sub(a);
+    let ab = b.clone().sub(a.clone());
+    let ac = c.clone().sub(a.clone());
     return ab.cross(ac).z;
 }
 
