@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { BotMesh } from './BotMesh';
 
 export class TextureEditor {
 	private static instance: TextureEditor | null = null;
@@ -27,18 +28,13 @@ export class TextureEditor {
 		texture.wrapT = THREE.RepeatWrapping;
 		// 设置只使用图片的左半部分作为纹理
 		texture.offset.set(0, 0);   // 从左上角开始
-
 		texture.repeat.set(1, 1);
-
 		texture.flipY = true;
-
 		texture.colorSpace = THREE.SRGBColorSpace;
 		texture.generateMipmaps = false;
 		texture.minFilter = THREE.LinearFilter;
 		texture.magFilter = THREE.LinearFilter;
-
 		texture.center.set(0, 0);
-
 		return texture;
 	}
 
@@ -87,6 +83,41 @@ export class TextureEditor {
 		return result;
 	}
 
+	public setOrigin(mesh: BotMesh, value: number)
+	{
+		let mat = <THREE.Material>mesh.material;
+		if(!mat) return ;
+		let geo = <THREE.BufferGeometry>mesh.geometry;
+		if(!geo) return ;
+		let geoUserData = geo.userData;
+		if(!geoUserData)
+			return ;
+		let points = geoUserData['position'];
+		let aabb = geoUserData['AABB'];
+		let width = aabb.maxX - aabb.minX;
+		let height = aabb.maxY - aabb.minY;
+
+		let pos = new Array<THREE.Vector2>;
+		pos.push(new THREE.Vector2(0, height));
+		pos.push(new THREE.Vector2(width / 2 , height));
+		pos.push(new THREE.Vector2(width, height));
+		pos.push(new THREE.Vector2(0, height / 2));
+		pos.push(new THREE.Vector2(width / 2, height / 2));
+		pos.push(new THREE.Vector2(width, height / 2));
+		pos.push(new THREE.Vector2(0, 0));
+		pos.push(new THREE.Vector2(width / 2, 0));
+		pos.push(new THREE.Vector2(width, 0));
+		let uvOrigin = pos[(value - 1) % pos.length];
+
+		let matUserData = mat.userData;
+		if(!matUserData)
+			return ;
+		matUserData['alignPos'] = value;
+		mesh.setUVOrigin(uvOrigin);
+
+		let result = mesh.computeUVs();
+		
+	}
 	public setTextureRepeat(x: number, y: number): void {
 		if (this.texture) {
 			this.texture.repeat.set(x, y);

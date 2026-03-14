@@ -5,6 +5,7 @@ import { GeometryEditor } from './GeometryEditor';
 import { SurfaceDrawer } from './SurfaceDrawer';
 import { ClipInfo } from './types';
 import { triangulate } from './TopoUtil';
+import { BotMesh } from './BotMesh';
 /**
  * ThreeJS场景管理类
  * 负责初始化3D场景、渲染器，以及处理用户交互
@@ -168,12 +169,26 @@ export class SceneMgr {
 	 * 添加白色平面（平躺在XY平面，法线指向+Z）
 	 */
 	private async addWhitePlane(): Promise<void> {
+		// 生成正8边形，AABB宽高在1200-1500之间
 		let vertices = [
-			new THREE.Vector3(-500, -500, 0),
-			new THREE.Vector3(500, -500, 0),
-			new THREE.Vector3(500, 500, 0),
-			new THREE.Vector3(-500, 500, 0)
+			new THREE.Vector3(700, 0, 0),      // 右
+			new THREE.Vector3(495, 495, 0),    // 右上
+			new THREE.Vector3(0, 700, 0),      // 上
+			new THREE.Vector3(-495, 495, 0),   // 左上
+			new THREE.Vector3(-700, 0, 0),     // 左
+			new THREE.Vector3(-495, -495, 0),  // 左下
+			new THREE.Vector3(0, -700, 0),     // 下
+			new THREE.Vector3(495, -495, 0)    // 右下
 		];
+		// 计算AABB
+		let minX = Math.min(...vertices.map(v => v.x));
+		let maxX = Math.max(...vertices.map(v => v.x));
+		let minY = Math.min(...vertices.map(v => v.y));
+		let maxY = Math.max(...vertices.map(v => v.y));
+		let width = maxX - minX;
+		let height = maxY - minY;
+		console.log(`AABB: width=${width.toFixed(1)}, height=${height.toFixed(1)}`);
+
 		let geometry: THREE.BufferGeometry = new THREE.BufferGeometry();
 		// point data
 		let pointsFlatten = new Array<number>;
@@ -197,6 +212,14 @@ export class SceneMgr {
 		}
 		geometry.setIndex(indexFlatten);
 		
+		geometry.userData['position'] = [...vertices];
+		geometry.userData['AABB'] = {
+			minX: minX,
+			maxX: maxX,
+			minY: minY,
+			maxY: maxY
+		}
+
 		// compute uvs
 		// 使用TextureEditor初始化纹理
 		const texture = await this.textureEditor.initTexture('/1.png');
@@ -214,15 +237,23 @@ export class SceneMgr {
 
 		// // 添加键盘事件监听器（通过TextureEditor处理）
 		// this.textureEditor.addKeyboardListeners();
-		
+
 		// 使用MeshBasicMaterial，不需要光源即可显示颜色
 		const material = new THREE.MeshBasicMaterial({
 			map: texture, // 应用纹理
-			side: THREE.DoubleSide
+			side: THREE.DoubleSide,
+			userData: {
+				'alignPos': 7,
+				'offset': new THREE.Vector2(0, 0),
+				'rotation': 0,
+				'scale': 0,
+			}
 		});
-		const plane = new THREE.Mesh(geometry, material);
+		const plane = new BotMesh(geometry, material);
 
 		this.scene.add(plane);
+		// @ts-ignore
+		window.plane = plane;
 	}
 
 
