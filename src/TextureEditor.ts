@@ -1,126 +1,124 @@
 import * as THREE from 'three';
 
 export class TextureEditor {
-  private static instance: TextureEditor | null = null;
-  private texture: THREE.Texture | null = null;
-  private planeTexture: THREE.Texture | null = null;
+	private static instance: TextureEditor | null = null;
+	private texture: THREE.Texture | null = null;
+	private planeTexture: THREE.Texture | null = null;
 
-  private constructor() {
-    // 私有构造函数，防止外部实例化
-  }
+	private constructor() {
+		// 私有构造函数，防止外部实例化
+	}
 
-  public static getInstance(): TextureEditor {
-    if (!TextureEditor.instance) {
-      TextureEditor.instance = new TextureEditor();
-    }
-    return TextureEditor.instance;
-  }
+	public static getInstance(): TextureEditor {
+		if (!TextureEditor.instance) {
+			TextureEditor.instance = new TextureEditor();
+		}
+		return TextureEditor.instance;
+	}
 
-  public async initTexture(texturePath: string = '/1.png'): Promise<THREE.Texture> {
-    const textureLoader = new THREE.TextureLoader();
-    const texture = await textureLoader.loadAsync(texturePath);
-    
-    this.texture = texture;
-    this.planeTexture = texture;
-    
-    texture.wrapS = THREE.RepeatWrapping;
-    texture.wrapT = THREE.RepeatWrapping;
-    // 设置只使用图片的左半部分作为纹理
-    texture.offset.set(0, 0);   // 从左上角开始
-    
-    texture.repeat.set(1, 1);
-    
-    texture.flipY = true;
-    
-    texture.colorSpace = THREE.SRGBColorSpace;
-    texture.generateMipmaps = false;
-    texture.minFilter = THREE.LinearFilter;
-    texture.magFilter = THREE.LinearFilter;
-    
-    texture.center.set(0, 0);
-    
-    return texture;
-  }
+	public async initTexture(texturePath: string = '/1.png'): Promise<THREE.Texture> {
+		const textureLoader = new THREE.TextureLoader();
+		const texture = await textureLoader.loadAsync(texturePath);
 
-  public rotateTextureRight(angle: number = Math.PI / 90): void {
-    if (this.planeTexture) {
-      this.planeTexture.rotation += angle;
-    }
-  }
+		this.texture = texture;
+		this.planeTexture = texture;
 
-  public rotateTextureLeft(angle: number = Math.PI / 90): void {
-    if (this.planeTexture) {
-      this.planeTexture.rotation -= angle;
-    }
-  }
+		texture.wrapS = THREE.RepeatWrapping;
+		texture.wrapT = THREE.RepeatWrapping;
+		// 设置只使用图片的左半部分作为纹理
+		texture.offset.set(0, 0);   // 从左上角开始
 
-  public computeUV(vertices: THREE.Vector3[], tex: THREE.Texture): THREE.Vector2[]
-  {
-    let result: THREE.Vector2[] = [];
-    if(!tex)
-      return result;
+		texture.repeat.set(1, 1);
 
-    let vMax = Math.max(...vertices.map(v => v.y));
-    let vMin = Math.min(...vertices.map(v => v.y));
-    let uMax = Math.max(...vertices.map(v => v.x));
-    let uMin = Math.min(...vertices.map(v => v.x));
+		texture.flipY = true;
 
-    let u_length = uMax - uMin;
-    let v_length = vMax - vMin;
-    if(u_length == 0 || v_length == 0)
-      return result;
+		texture.colorSpace = THREE.SRGBColorSpace;
+		texture.generateMipmaps = false;
+		texture.minFilter = THREE.LinearFilter;
+		texture.magFilter = THREE.LinearFilter;
 
-    let imgW = tex.width;
-    let imgH = tex.height;
-    if(!imgH || !imgW)
-    {
-      imgW = u_length;
-      imgH = v_length;
-    }
+		texture.center.set(0, 0);
 
-    // 后面可以设置origin
-    let uvOrigin = new THREE.Vector2(uMin, vMin);
+		return texture;
+	}
 
-    vertices.forEach(uv => {
-      let newUV = new THREE.Vector2((uv.x - uvOrigin.x) / imgW, (uv.y - uvOrigin.y) / imgH);
-      result.push(newUV);
-    });
-    tex.repeat.set(1,1);
-    return result;
-  }
+	public rotateTextureRight(angle: number = Math.PI / 90): void {
+		if (this.planeTexture) {
+			this.planeTexture.rotation += angle;
+		}
+	}
 
-  public setTextureRepeat(x: number, y: number): void {
-    if (this.texture) {
-      this.texture.repeat.set(x, y);
-    }
-  }
+	public rotateTextureLeft(angle: number = Math.PI / 90): void {
+		if (this.planeTexture) {
+			this.planeTexture.rotation -= angle;
+		}
+	}
 
-  public setTextureRotation(rotation: number): void {
-    if (this.texture) {
-      this.texture.rotation = rotation;
-    }
-  }
+	public computeUV(vertices: THREE.Vector3[], tex: THREE.Texture): THREE.Vector2[] {
+		let result: THREE.Vector2[] = [];
+		if (!tex)
+			return result;
 
-  public setTextureCenter(x: number, y: number): void {
-    if (this.texture) {
-      this.texture.center.set(x, y);
-    }
-  }
+		let vMax = Math.max(...vertices.map(v => v.y));
+		let vMin = Math.min(...vertices.map(v => v.y));
+		let uMax = Math.max(...vertices.map(v => v.x));
+		let uMin = Math.min(...vertices.map(v => v.x));
 
-  public getTexture(): THREE.Texture | null {
-    return this.texture;
-  }
+		let u_length = uMax - uMin;
+		let v_length = vMax - vMin;
+		if (u_length == 0 || v_length == 0)
+			return result;
 
-  public addKeyboardListeners(): void {
-    window.addEventListener("keydown", (e) => {
-      if (e.key === "+" || e.key === "=") {
-        console.log("+++++++++++++");
-        this.rotateTextureRight();
-      }
-      else if (e.key === "-" || e.key === "_") {
-        console.log("----------");
-        this.rotateTextureLeft();
-      }
-    });
-  }
+		let imgW = tex.width;
+		let imgH = tex.height;
+		if (!imgH || !imgW) {
+			imgW = u_length;
+			imgH = v_length;
+		}
+
+		// 后面可以设置origin
+		let uvOrigin = new THREE.Vector2(uMin, vMin);
+
+		vertices.forEach(uv => {
+			let newUV = new THREE.Vector2((uv.x - uvOrigin.x) / imgW, (uv.y - uvOrigin.y) / imgH);
+			result.push(newUV);
+		});
+		tex.repeat.set(1, 1);
+		return result;
+	}
+
+	public setTextureRepeat(x: number, y: number): void {
+		if (this.texture) {
+			this.texture.repeat.set(x, y);
+		}
+	}
+
+	public setTextureRotation(rotation: number): void {
+		if (this.texture) {
+			this.texture.rotation = rotation;
+		}
+	}
+
+	public setTextureCenter(x: number, y: number): void {
+		if (this.texture) {
+			this.texture.center.set(x, y);
+		}
+	}
+
+	public getTexture(): THREE.Texture | null {
+		return this.texture;
+	}
+
+	public addKeyboardListeners(): void {
+		window.addEventListener("keydown", (e) => {
+			if (e.key === "+" || e.key === "=") {
+				console.log("+++++++++++++");
+				this.rotateTextureRight();
+			}
+			else if (e.key === "-" || e.key === "_") {
+				console.log("----------");
+				this.rotateTextureLeft();
+			}
+		});
+	}
 }
