@@ -1,6 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
+
+const CAMERA_2D_SIZE = 6000;
+
+
 /**
  * 相机管理类（单例模式）
  * 负责管理固定向负y方向观察的相机，用作2D相机
@@ -16,8 +20,8 @@ export class CameraMgr {
 	
 	// 高度和 zoom 的配置常量
 	private static readonly MIN_HEIGHT = 2;
-	private static readonly MIN_ZOOM = 0.01;
-	private static readonly MAX_ZOOM = 10;
+	private static readonly MIN_ZOOM = 0.0001;
+	private static readonly MAX_ZOOM = 1000;
 	private static readonly REFERENCE_HEIGHT = 100; // 用于计算 zoom 的参考高度（不限制实际高度）
 	
 	private camera2D: THREE.OrthographicCamera;
@@ -29,7 +33,7 @@ export class CameraMgr {
 	private resizeHandler: () => void;
 	private keyboardHandler: ((e: KeyboardEvent) => void) | null = null;
 	private currentCameraType: '2D' | '3D' = '2D'; // 当前激活的相机类型
-	private sensitivity: number = 16.0; // 滚轮灵敏度
+	private sensitivity: number = 16.0 * 15; // 滚轮灵敏度
 
 	/**
 	 * 获取单例实例
@@ -57,7 +61,7 @@ export class CameraMgr {
 		const width = container.clientWidth;
 		const height = container.clientHeight;
 		const aspect = width / height;
-		const size = 10; // 视野大小的一半（单位）
+		const size = CAMERA_2D_SIZE; // 视野大小的一半（单位），适配几千尺寸的平面
 		
 		this.camera2D = new THREE.OrthographicCamera(
 			-size * aspect, // left
@@ -65,7 +69,7 @@ export class CameraMgr {
 			size,           // top
 			-size,          // bottom
 			0.1,            // near
-			10000            // far
+			100000            // far
 		);
 
 		// 创建2D相机的轨道控制器
@@ -74,7 +78,7 @@ export class CameraMgr {
 		// 设置2D相机初始位置，固定朝着-z方向观察（向下看）
 		// 相机在z轴正方向，看向xy平面（z=0），即看向负z方向
 		this.camera2D.up.set(0, 1, 0); // 屏幕Y轴向上对应世界Y轴
-		this.camera2D.position.set(0, 0, 1000);
+		this.camera2D.position.set(0, 0, 20000);
 		this.camera2D.lookAt(0, 0, 0);
 
 		// 配置2D相机轨道控制器
@@ -89,13 +93,13 @@ export class CameraMgr {
 			75, // 视野角度（FOV）
 			aspect3D, // 宽高比
 			0.1, // 近裁剪面
-			1000 // 远裁剪面
+			20000 // 远裁剪面，适配几千尺寸的平面
 		);
 
 		// 设置3D相机初始位置（Z轴向上的坐标系）
 		// 必须在创建OrbitControls之前设置up向量，否则控制器会使用默认的(0,1,0)
 		this.camera3D.up.set(0, 0, 1); // Z轴向上
-		this.camera3D.position.set(0, -5, 5);
+		this.camera3D.position.set(0, -6000, 6000); // 调整位置以看全几千尺寸的平面
 		this.camera3D.lookAt(0, 0, 0);
 
 		// 创建3D相机的轨道控制器（不做任何限制）
@@ -372,7 +376,7 @@ export class CameraMgr {
 		const width = this.container.clientWidth;
 		const height = this.container.clientHeight;
 		const aspect = width / height;
-		const size = 10; // 视野大小的一半（单位）
+		const size = CAMERA_2D_SIZE; // 视野大小的一半（单位），适配几千尺寸的平面
 
 		// 更新2D正交相机
 		this.camera2D.left = -size * aspect;
@@ -440,4 +444,3 @@ export class CameraMgr {
 		this.controls3D.dispose();
 	}
 }
-

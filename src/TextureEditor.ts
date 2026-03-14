@@ -16,9 +16,9 @@ export class TextureEditor {
     return TextureEditor.instance;
   }
 
-  public initTexture(texturePath: string = '/1.png'): THREE.Texture {
+  public async initTexture(texturePath: string = '/1.png'): Promise<THREE.Texture> {
     const textureLoader = new THREE.TextureLoader();
-    const texture = textureLoader.load(texturePath);
+    const texture = await textureLoader.loadAsync(texturePath);
     
     this.texture = texture;
     this.planeTexture = texture;
@@ -52,6 +52,41 @@ export class TextureEditor {
     if (this.planeTexture) {
       this.planeTexture.rotation -= angle;
     }
+  }
+
+  public computeUV(vertices: THREE.Vector3[], tex: THREE.Texture): THREE.Vector2[]
+  {
+    let result: THREE.Vector2[] = [];
+    if(!tex)
+      return result;
+
+    let vMax = Math.max(...vertices.map(v => v.y));
+    let vMin = Math.min(...vertices.map(v => v.y));
+    let uMax = Math.max(...vertices.map(v => v.x));
+    let uMin = Math.min(...vertices.map(v => v.x));
+
+    let u_length = uMax - uMin;
+    let v_length = vMax - vMin;
+    if(u_length == 0 || v_length == 0)
+      return result;
+
+    let imgW = tex.width;
+    let imgH = tex.height;
+    if(!imgH || !imgW)
+    {
+      imgW = u_length;
+      imgH = v_length;
+    }
+
+    // 后面可以设置origin
+    let uvOrigin = new THREE.Vector2(uMin, vMin);
+
+    vertices.forEach(uv => {
+      let newUV = new THREE.Vector2((uv.x - uvOrigin.x) / imgW, (uv.y - uvOrigin.y) / imgH);
+      result.push(newUV);
+    });
+    tex.repeat.set(1,1);
+    return result;
   }
 
   public setTextureRepeat(x: number, y: number): void {

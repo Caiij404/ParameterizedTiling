@@ -42,14 +42,15 @@ export class SceneMgr {
 		this.renderer = new THREE.WebGLRenderer({ antialias: true });
 
 		// GridHelper默认在XZ平面，需要旋转到XY平面（Z轴向上的坐标系）
-		this.gridHelper = new THREE.GridHelper(20, 20, 0x888888, 0x444444);
+		this.gridHelper = new THREE.GridHelper(2000, 10, 0x888888, 0x444444);
 		this.gridHelper.rotation.x = Math.PI / 2; // 旋转90度使其在XY平面
 		this.gridHelper.position.z = -0.01; // 稍微下移避免z-fighting
-		this.axesHelper = new THREE.AxesHelper(10);
+		this.axesHelper = new THREE.AxesHelper(1000);
 		this.axesHelper.position.z = 0.0001;
 		this.scene.add(this.gridHelper);
 		this.scene.add(this.axesHelper);
-		this.createPlane();
+		// this.createPlane();
+		this.addWhitePlane();
 		// 初始化场景（需要在创建渲染器后）
 		this.init();
 	}
@@ -151,6 +152,9 @@ export class SceneMgr {
 		CameraMgr.init(this.container, this.renderer.domElement);
 		this.cameraMgr = CameraMgr.getInstance();
 
+		// @ts-ignore
+		window.camera = CameraMgr.getInstance()
+
 		// 初始化SurfaceDrawer
 		SurfaceDrawer.init(this.scene, this.renderer.domElement);
 		this.surfaceDrawer = SurfaceDrawer.getInstance();
@@ -163,14 +167,53 @@ export class SceneMgr {
 	/**
 	 * 添加白色平面（平躺在XY平面，法线指向+Z）
 	 */
-	private addWhitePlane(): void {
-		const geometry = new THREE.PlaneGeometry(5, 5);
+	private async addWhitePlane(): Promise<void> {
+		let vertices = [
+			new THREE.Vector3(-500, -500, 0),
+			new THREE.Vector3(500, -500, 0),
+			new THREE.Vector3(500, 500, 0),
+			new THREE.Vector3(-500, 500, 0)
+		];
+		let geometry: THREE.BufferGeometry = new THREE.BufferGeometry();
+		// point data
+		let pointsFlatten = new Array<number>;
+		for(let p of vertices)
+		{
+			pointsFlatten.push(p.x, p.y, p.z);
+		}
+		let meshVertices = new Float32Array(pointsFlatten);
+		let posAttr = new THREE.BufferAttribute(meshVertices, 3);
+		geometry.setAttribute('position', posAttr);
+
+		// index data
+		let indexFlatten = new Array<number>;
+		let triangles = triangulate(vertices);
+		if(triangles.length)
+		{
+			for(let tri of triangles)
+			{
+				indexFlatten.push(tri[0], tri[1], tri[2]);
+			}
+		}
+		geometry.setIndex(indexFlatten);
 		
+		// compute uvs
 		// 使用TextureEditor初始化纹理
-		const texture = this.textureEditor.initTexture('/1.png');
-		
-		// 添加键盘事件监听器（通过TextureEditor处理）
-		this.textureEditor.addKeyboardListeners();
+		const texture = await this.textureEditor.initTexture('/1.png');
+		const uvs = this.textureEditor.computeUV(vertices, texture);
+		if(uvs.length)
+		{
+			let uvsFlatten = new Array<number>;
+			uvs.forEach(uv => {
+				uvsFlatten.push(uv.x, uv.y);
+			});
+			let meshUvs = new Float32Array(uvsFlatten);
+			let uvsAttr = new THREE.BufferAttribute(meshUvs, 2);
+			geometry.setAttribute('uv', uvsAttr);
+		}
+
+		// // 添加键盘事件监听器（通过TextureEditor处理）
+		// this.textureEditor.addKeyboardListeners();
 		
 		// 使用MeshBasicMaterial，不需要光源即可显示颜色
 		const material = new THREE.MeshBasicMaterial({
