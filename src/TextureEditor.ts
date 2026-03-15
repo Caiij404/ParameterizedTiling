@@ -83,41 +83,41 @@ export class TextureEditor {
 		return result;
 	}
 
-	public setOrigin(mesh: BotMesh, value: number)
-	{
-		let mat = <THREE.Material>mesh.material;
-		if(!mat) return ;
-		let geo = <THREE.BufferGeometry>mesh.geometry;
-		if(!geo) return ;
-		let geoUserData = geo.userData;
-		if(!geoUserData)
-			return ;
-		let points = geoUserData['position'];
-		let aabb = geoUserData['AABB'];
-		let width = aabb.maxX - aabb.minX;
-		let height = aabb.maxY - aabb.minY;
+	// public setOrigin(mesh: BotMesh, value: number)
+	// {
+	// 	let mat = <THREE.Material>mesh.material;
+	// 	if(!mat) return ;
+	// 	let geo = <THREE.BufferGeometry>mesh.geometry;
+	// 	if(!geo) return ;
+	// 	let geoUserData = geo.userData;
+	// 	if(!geoUserData)
+	// 		return ;
+	// 	let points = geoUserData['position'];
+	// 	let aabb = geoUserData['AABB'];
+	// 	let width = aabb.maxX - aabb.minX;
+	// 	let height = aabb.maxY - aabb.minY;
 
-		let pos = new Array<THREE.Vector2>;
-		pos.push(new THREE.Vector2(0, height));
-		pos.push(new THREE.Vector2(width / 2 , height));
-		pos.push(new THREE.Vector2(width, height));
-		pos.push(new THREE.Vector2(0, height / 2));
-		pos.push(new THREE.Vector2(width / 2, height / 2));
-		pos.push(new THREE.Vector2(width, height / 2));
-		pos.push(new THREE.Vector2(0, 0));
-		pos.push(new THREE.Vector2(width / 2, 0));
-		pos.push(new THREE.Vector2(width, 0));
-		let uvOrigin = pos[(value - 1) % pos.length];
+	// 	let pos = new Array<THREE.Vector2>;
+	// 	pos.push(new THREE.Vector2(0, height));
+	// 	pos.push(new THREE.Vector2(width / 2 , height));
+	// 	pos.push(new THREE.Vector2(width, height));
+	// 	pos.push(new THREE.Vector2(0, height / 2));
+	// 	pos.push(new THREE.Vector2(width / 2, height / 2));
+	// 	pos.push(new THREE.Vector2(width, height / 2));
+	// 	pos.push(new THREE.Vector2(0, 0));
+	// 	pos.push(new THREE.Vector2(width / 2, 0));
+	// 	pos.push(new THREE.Vector2(width, 0));
+	// 	let uvOrigin = pos[(value - 1) % pos.length];
 
-		let matUserData = mat.userData;
-		if(!matUserData)
-			return ;
-		matUserData['alignPos'] = value;
-		mesh.setUVOrigin(uvOrigin);
+	// 	let matUserData = mat.userData;
+	// 	if(!matUserData)
+	// 		return ;
+	// 	matUserData['alignPos'] = value;
+	// 	mesh.setUVOrigin(uvOrigin);
 
-		let result = mesh.computeUVs();
+	// 	let result = mesh.computeUVs();
 		
-	}
+	// }
 	public setTextureRepeat(x: number, y: number): void {
 		if (this.texture) {
 			this.texture.repeat.set(x, y);

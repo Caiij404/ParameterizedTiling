@@ -1,10 +1,12 @@
 <template>
   <div id="scene-container"></div>
+  <GridMenu @item-click="handleGridItemClick" />
 </template>
 
 <script setup lang="ts">
 import { onMounted, onUnmounted } from 'vue';
 import { SceneMgr } from './SceneMgr';
+import GridMenu from './components/GridMenu.vue';
 let sceneMgr: SceneMgr | null = null;
 
 onMounted(() => {
@@ -29,6 +31,11 @@ onUnmounted(() => {
     delete (window as any).sceneMgr;
   }
 });
+
+const handleGridItemClick = (data: any) => {
+  console.log('Grid item clicked:', data);
+  // 这里可以添加点击处理逻辑
+};
 </script>
 
 <style>

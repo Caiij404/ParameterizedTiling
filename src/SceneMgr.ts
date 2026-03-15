@@ -169,17 +169,17 @@ export class SceneMgr {
 	 * 添加白色平面（平躺在XY平面，法线指向+Z）
 	 */
 	private async addWhitePlane(): Promise<void> {
-		// 生成正8边形，AABB宽高在1200-1500之间
+		// 生成矩形，长2300宽1800
 		let vertices = [
-			new THREE.Vector3(700, 0, 0),      // 右
-			new THREE.Vector3(495, 495, 0),    // 右上
-			new THREE.Vector3(0, 700, 0),      // 上
-			new THREE.Vector3(-495, 495, 0),   // 左上
-			new THREE.Vector3(-700, 0, 0),     // 左
-			new THREE.Vector3(-495, -495, 0),  // 左下
-			new THREE.Vector3(0, -700, 0),     // 下
-			new THREE.Vector3(495, -495, 0)    // 右下
+			new THREE.Vector3(1150, 900, 0),    // 右上
+			new THREE.Vector3(-1150, 900, 0),   // 左上
+			new THREE.Vector3(-1150, -900, 0),  // 左下
+			new THREE.Vector3(1150, -900, 0)    // 右下
 		];
+		for(let p of vertices)
+		{
+			// p.add(new THREE.Vector3(-245, 0, 0));
+		}
 		// 计算AABB
 		let minX = Math.min(...vertices.map(v => v.x));
 		let maxX = Math.max(...vertices.map(v => v.x));
@@ -235,9 +235,6 @@ export class SceneMgr {
 			geometry.setAttribute('uv', uvsAttr);
 		}
 
-		// // 添加键盘事件监听器（通过TextureEditor处理）
-		// this.textureEditor.addKeyboardListeners();
-
 		// 使用MeshBasicMaterial，不需要光源即可显示颜色
 		const material = new THREE.MeshBasicMaterial({
 			map: texture, // 应用纹理
@@ -250,6 +247,14 @@ export class SceneMgr {
 			}
 		});
 		const plane = new BotMesh(geometry, material);
+		// plane.draw();
+		
+		// 订阅TEXTURE_ALIGN事件
+		// @ts-ignore
+		window.EventBus.sub('TEXTURE_ALIGN', (index: number) => {
+			plane.setOrigin(index);
+		});
+
 
 		this.scene.add(plane);
 		// @ts-ignore
